@@ -1,22 +1,20 @@
 const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
+Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/Home.jsm");
 Cu.import("resource://gre/modules/HomeProvider.jsm");
-Cu.import("resource://gre/modules/Messaging.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-// Make these IDs unique, preferably tied to a domain that you own.
+const ADDON_ID = "instagram.panel@margaretleibovic.com";
 const PANEL_ID = "instagram.panel@margaretleibovic.com";
 const DATASET_ID = "instagram.dataset@margaretleibovic.com";
 
-// An example of how to create a string bundle for localization.
 XPCOMUtils.defineLazyGetter(this, "Strings", function() {
   return Services.strings.createBundle("chrome://instagrampanel/locale/instagrampanel.properties");
 });
 
-// An example of how to import a helper module.
 XPCOMUtils.defineLazyGetter(this, "Instagram", function() {
   let win = Services.wm.getMostRecentWindow("navigator:browser");
   Services.scriptloader.loadSubScript("chrome://instagrampanel/content/instagram.js", win);
@@ -34,8 +32,12 @@ function optionsCallback() {
   };
 }
 
+function openPanel() {
+  Services.wm.getMostRecentWindow("navigator:browser").BrowserApp.loadURI("about:home?panel=" + PANEL_ID);
+}
+
 function refreshDataset() {
-  Instagram.getPopular(function (response) {
+  function callback(response) {
     let items = [];
     response.data.forEach(function (d) {
       let item = {
@@ -50,7 +52,13 @@ function refreshDataset() {
       yield storage.deleteAll();
       yield storage.save(items);
     }).then(null, e => Cu.reportError("Error refreshing dataset " + DATASET_ID + ": " + e));
-  });
+  }
+
+  if (Instagram.isAuthenticated()) {
+    Instagram.getUserFeed(callback);
+  } else {
+    Instagram.getPopularFeed(callback);
+  }
 }
 
 function deleteDataset() {
@@ -58,6 +66,43 @@ function deleteDataset() {
     let storage = HomeProvider.getStorage(DATASET_ID);
     yield storage.deleteAll();
   }).then(null, e => Cu.reportError("Error deleting data from HomeProvider: " + e));
+}
+
+function optionsDisplayed(doc, topic, id) {
+  if (id != ADDON_ID) {
+    return;
+  }
+
+  let setting = doc.getElementById("auth-setting");
+  let button = doc.getElementById("auth-button");
+  updateOptions(setting, button);
+
+  button.addEventListener("click", function(e) {
+    if (Instagram.isAuthenticated()) {
+      // Log out
+      Instagram.clearAccessToken();
+      refreshDataset();
+      updateOptions(setting, button);
+    } else {
+      // Log in
+      Instagram.authenticate(function() {
+        refreshDataset();
+        updateOptions(setting, button);
+      });
+    }
+  });
+}
+
+function updateOptions(setting, button) {
+  if (Instagram.isAuthenticated()) {
+    Instagram.getUserInfo(function (response) {
+      setting.setAttribute("title", "Logged in as " + response.data.username);
+    });
+    button.setAttribute("label", "Log out");
+  } else {
+    setting.setAttribute("title", "Not logged in");
+    button.setAttribute("label", "Log in");
+  }
 }
 
 /**
@@ -82,15 +127,20 @@ function startup(data, reason) {
 
   // Update data once every hour.
   HomeProvider.addPeriodicSync(DATASET_ID, 3600, refreshDataset);
+
+  Services.obs.addObserver(optionsDisplayed, AddonManager.OPTIONS_NOTIFICATION_DISPLAYED, false);
 }
 
 function shutdown(data, reason) {
   if (reason == ADDON_UNINSTALL || reason == ADDON_DISABLE) {
     Home.panels.uninstall(PANEL_ID);
     deleteDataset();
+    Instagram.clearAccessToken();
   }
 
   Home.panels.unregister(PANEL_ID);
+
+  Services.obs.removeObserver(optionsDisplayed, AddonManager.OPTIONS_NOTIFICATION_DISPLAYED);
 }
 
 function install(data, reason) {}

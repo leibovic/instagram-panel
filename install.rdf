@@ -19,5 +19,7 @@
             </Description>
         </em:targetApplication>
 
+        <em:optionsURL>chrome://instagrampanel/content/options.xul</em:optionsURL>
+
     </Description>
 </RDF>
