@@ -96,12 +96,12 @@ function optionsDisplayed(doc, topic, id) {
 function updateOptions(setting, button) {
   if (Instagram.isAuthenticated()) {
     Instagram.getUserInfo(function (response) {
-      setting.setAttribute("title", "Logged in as " + response.data.username);
+      setting.setAttribute("title",  Strings.browser.formatStringFromName("loggedInAs", [response.data.username], 1));
     });
-    button.setAttribute("label", "Log out");
+    button.setAttribute("label", Strings.GetStringFromName("logOut"));
   } else {
-    setting.setAttribute("title", "Not logged in");
-    button.setAttribute("label", "Log in");
+    setting.setAttribute("title", Strings.GetStringFromName("notLoggedIn"));
+    button.setAttribute("label", Strings.GetStringFromName("logIn"));
   }
 }
 
