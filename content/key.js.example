@@ -1,0 +1,4 @@
+// Update this value with the client id and secret you get when you
+// register your Instagram app
+const CLIENT_ID = "";
+const CLIENT_SECRET = "";
