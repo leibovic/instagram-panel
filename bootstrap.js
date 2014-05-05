@@ -40,16 +40,9 @@ function refreshDataset() {
     response.data.forEach(function (d) {
       let item = {
         url: d.link,
-        title: d.user.username,
-        image_url: d.images.thumbnail.url // 150x150
+        image_url: d.images.standard_resolution.url // 640x640
       };
-      if (d.caption) {
-        item.description = d.caption.text;
-      }
       items.push(item);
-      Services.console.logStringMessage("****************");
-      Services.console.logStringMessage(JSON.stringify(item));
-
     });
 
     Task.spawn(function* () {
