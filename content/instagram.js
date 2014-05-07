@@ -79,15 +79,15 @@ var Instagram = {
   _get: function(url, callback) {
     let req = new XMLHttpRequest();
     req.addEventListener("error", evt => {
-      Cu.reportError("Pocket: POST error - " + url + ": " + req.statusText);
+      Cu.reportError("Instagram: POST error - " + url + ": " + req.statusText);
     }, false);
     req.addEventListener("abort", evt => {
-      Cu.reportError("Pocket: POST abort - " + url + ": " + req.statusText);
+      Cu.reportError("Instagram: POST abort - " + url + ": " + req.statusText);
     }, false);
 
     req.addEventListener("load", evt => {
       if (req.status === 401) {
-        Cu.reportError("Pocket: POST fail - " + url + ": not authenticated");
+        Cu.reportError("Instagram: POST fail - " + url + ": not authenticated");
       } else if (req.status === 200 && callback) {
         let response = JSON.parse(req.responseText);
         callback(response);
