@@ -17,6 +17,9 @@ XPCOMUtils.defineLazyGetter(this, "Strings", function() {
 
 XPCOMUtils.defineLazyGetter(this, "Instagram", function() {
   let win = Services.wm.getMostRecentWindow("navigator:browser");
+  if (win.Instagram) {
+    return win.Instagram;
+  }
   Services.scriptloader.loadSubScript("chrome://instagrampanel/content/instagram.js", win);
   return win["Instagram"];
 });

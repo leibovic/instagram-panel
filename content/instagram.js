@@ -34,6 +34,7 @@ var Instagram = {
 
   clearAccessToken: function() {
     Services.prefs.clearUserPref(ACCESS_TOKEN_PREF);
+    this._accessToken = "";
   },
 
   authenticate: function(callback) {
