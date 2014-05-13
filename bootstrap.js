@@ -57,7 +57,7 @@ function refreshDataset() {
     }).then(null, e => Cu.reportError("Error refreshing dataset " + DATASET_ID + ": " + e));
   }
 
-  if (Instagram.isAuthenticated()) {
+  if (Instagram.isAuthenticated) {
     Instagram.getUserFeed(callback);
   } else {
     Instagram.getPopularFeed(callback);
@@ -81,7 +81,7 @@ function optionsDisplayed(doc, topic, id) {
   updateOptions(setting, button);
 
   button.addEventListener("click", function(e) {
-    if (Instagram.isAuthenticated()) {
+    if (Instagram.isAuthenticated) {
       // Log out
       Instagram.clearAccessToken();
       refreshDataset();
@@ -97,7 +97,7 @@ function optionsDisplayed(doc, topic, id) {
 }
 
 function updateOptions(setting, button) {
-  if (Instagram.isAuthenticated()) {
+  if (Instagram.isAuthenticated) {
     Instagram.getUserInfo(function (response) {
       setting.setAttribute("title",  Strings.formatStringFromName("loggedInAs", [response.data.username], 1));
     });

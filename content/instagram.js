@@ -1,15 +1,20 @@
 "use strict";
 
-XPCOMUtils.defineLazyGetter(this, "CLIENT_ID", function() {
-  let sandbox = {};
-  Services.scriptloader.loadSubScript("chrome://instagrampanel/content/key.js", sandbox);
-  return sandbox.CLIENT_ID;
-});
-
-const ACCESS_TOKEN_PREF = "margaretleibovic.instagram.accessToken";
-const REDIRECT_URI = "http://margaretleibovic.com/instagram/";
-
 var Instagram = {
+  ACCESS_TOKEN_PREF: "margaretleibovic.instagram.accessToken",
+  REDIRECT_URI:  "http://margaretleibovic.com/instagram/",
+
+  get CLIENT_ID() {
+    if (this._CLIENT_ID) {
+      return this._CLIENT_ID;
+    }
+
+    let sandbox = {};
+    Services.scriptloader.loadSubScript("chrome://instagrampanel/content/key.js", sandbox);
+    this._CLIENT_ID = sandbox.CLIENT_ID;
+    return this._CLIENT_ID;
+  },
+
   _accessToken: "",
 
   get accessToken() {
@@ -17,7 +22,7 @@ var Instagram = {
       return this._accessToken;
     }
     try {
-      this._accessToken = Services.prefs.getCharPref(ACCESS_TOKEN_PREF);
+      this._accessToken = Services.prefs.getCharPref(this.ACCESS_TOKEN_PREF);
     } catch (e) {}
 
     return this._accessToken;
@@ -25,26 +30,26 @@ var Instagram = {
 
   set accessToken(token) {
     this._accessToken = token;
-    Services.prefs.setCharPref(ACCESS_TOKEN_PREF, token);
+    Services.prefs.setCharPref(this.ACCESS_TOKEN_PREF, token);
   },
 
-  isAuthenticated: function() {
+  get isAuthenticated() {
     return !!this.accessToken;
   },
 
   clearAccessToken: function() {
-    Services.prefs.clearUserPref(ACCESS_TOKEN_PREF);
+    Services.prefs.clearUserPref(this.ACCESS_TOKEN_PREF);
     this._accessToken = "";
   },
 
   authenticate: function(callback) {
     let authUrl = "https://instagram.com/oauth/authorize/?response_type=token&" +
-      "client_id=" + CLIENT_ID + "&redirect_uri=" + REDIRECT_URI;
+      "client_id=" + this.CLIENT_ID + "&redirect_uri=" + this.REDIRECT_URI;
 
     let tab = window.BrowserApp.addTab(authUrl);
     tab.browser.addEventListener("pageshow", evt => {
       let href = tab.browser.contentWindow.location.href;
-      if (href.startsWith(REDIRECT_URI)) {
+      if (href.startsWith(this.REDIRECT_URI)) {
         let index = href.indexOf("access_token=") + "access_token=".length;
         this.accessToken = href.substring(index);
         callback();
@@ -54,7 +59,7 @@ var Instagram = {
   },
 
   getUserInfo: function(callback) {
-    if (!this.isAuthenticated()) {
+    if (!this.isAuthenticated) {
       throw "Can't get user info because user isn't authenticated";
     }
     let url = "https://api.instagram.com/v1/users/self?access_token=" + this.accessToken;
@@ -62,7 +67,7 @@ var Instagram = {
   },
 
   getUserFeed: function(callback) {
-    if (!this.isAuthenticated()) {
+    if (!this.isAuthenticated) {
       throw "Can't get user feed because user isn't authenticated";
     }
     let url = "https://api.instagram.com/v1/users/self/feed?access_token=" + this.accessToken;
@@ -70,7 +75,7 @@ var Instagram = {
   },
 
   getPopularFeed: function(callback) {
-    let url = "https://api.instagram.com/v1/media/popular?client_id=" + CLIENT_ID;
+    let url = "https://api.instagram.com/v1/media/popular?client_id=" + this.CLIENT_ID;
     this._get(url, callback);
   },
 
